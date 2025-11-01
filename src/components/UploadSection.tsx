@@ -1,7 +1,78 @@
-import { Upload, Image } from "lucide-react";
+import { Upload, Image, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEquipment } from "@/contexts/EquipmentContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useState, useRef } from "react";
 
 const UploadSection = () => {
+  const { setEquipmentData, isProcessing, setIsProcessing } = useEquipment();
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (JPEG, PNG)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setUploadComplete(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { data, error } = await supabase.functions.invoke('extract-specs', {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setEquipmentData(data.data);
+        setUploadComplete(true);
+        toast({
+          title: "✅ Specs Extracted Successfully",
+          description: "Equipment data has been parsed. Review and generate analysis below.",
+        });
+        
+        // Scroll to generator panel
+        setTimeout(() => {
+          document.getElementById('generator-panel')?.scrollIntoView({ behavior: 'smooth' });
+        }, 500);
+      } else {
+        throw new Error(data.error || 'Failed to extract specs');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "❌ Extraction Failed",
+        description: error instanceof Error ? error.message : "Failed to process image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
+
   return (
     <section className="py-20 relative">
       <div className="container mx-auto px-4">
@@ -15,22 +86,63 @@ const UploadSection = () => {
             </p>
           </div>
 
-          <div className="border-2 border-dashed border-primary/30 rounded-2xl p-12 text-center hover:border-primary/60 transition-all bg-card/50 backdrop-blur-sm group cursor-pointer">
+          <div
+            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all bg-card/50 backdrop-blur-sm cursor-pointer ${
+              isDragging
+                ? 'border-primary bg-primary/10'
+                : uploadComplete
+                ? 'border-green-500/50 bg-green-500/10'
+                : 'border-primary/30 hover:border-primary/60'
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileInput}
+              disabled={isProcessing}
+            />
+
             <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center group-hover:border-glow-blue transition-all">
-                <Image className="w-10 h-10 text-primary" />
+              <div className={`w-20 h-20 rounded-2xl border flex items-center justify-center transition-all ${
+                uploadComplete
+                  ? 'bg-green-500/20 border-green-500'
+                  : 'bg-primary/10 border-primary/30 group-hover:border-glow-blue'
+              }`}>
+                {uploadComplete ? (
+                  <CheckCircle2 className="w-10 h-10 text-green-500" />
+                ) : (
+                  <Image className="w-10 h-10 text-primary" />
+                )}
               </div>
               <div>
                 <p className="text-lg font-medium mb-1">
-                  Drag & drop your nameplate images
+                  {uploadComplete
+                    ? '✅ Specs Extracted Successfully'
+                    : isDragging
+                    ? 'Drop to upload'
+                    : 'Drag & drop your nameplate images'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  or click to browse (JPEG, PNG supported)
+                  {uploadComplete
+                    ? 'Upload another image or proceed to generator panel'
+                    : 'or click to browse (JPEG, PNG supported)'}
                 </p>
               </div>
-              <Button className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/50 shadow-lg hover:shadow-primary/50 transition-all">
+              <Button
+                className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/50 shadow-lg hover:shadow-primary/50 transition-all"
+                disabled={isProcessing}
+              >
                 <Upload className="w-4 h-4 mr-2" />
-                Extract Specs & Generate Analysis
+                {isProcessing ? 'Analyzing...' : uploadComplete ? 'Upload Another' : 'Extract Specs & Generate Analysis'}
               </Button>
             </div>
           </div>
