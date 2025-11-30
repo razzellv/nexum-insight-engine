@@ -21,6 +21,8 @@ interface EquipmentContextType {
   setEquipmentData: (data: EquipmentData | null) => void;
   performanceData: any | null;
   setPerformanceData: (data: any | null) => void;
+  aiAnalysis: string | null;
+  setAiAnalysis: (analysis: string | null) => void;
   isProcessing: boolean;
   setIsProcessing: (processing: boolean) => void;
 }
@@ -30,6 +32,7 @@ const EquipmentContext = createContext<EquipmentContextType | undefined>(undefin
 export const EquipmentProvider = ({ children }: { children: ReactNode }) => {
   const [equipmentData, setEquipmentData] = useState<EquipmentData | null>(null);
   const [performanceData, setPerformanceData] = useState<any | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   return (
@@ -39,6 +42,8 @@ export const EquipmentProvider = ({ children }: { children: ReactNode }) => {
         setEquipmentData,
         performanceData,
         setPerformanceData,
+        aiAnalysis,
+        setAiAnalysis,
         isProcessing,
         setIsProcessing,
       }}

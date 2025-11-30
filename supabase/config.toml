@@ -13,5 +13,8 @@ verify_jwt = false
 [functions.send-to-webhooks]
 verify_jwt = false
 
+[functions.analyze-equipment]
+verify_jwt = false
+
 [functions.calculate-performance]
 verify_jwt = false
