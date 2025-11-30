@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { useState, useRef } from "react";
 
 const UploadSection = () => {
-  const { setEquipmentData, isProcessing, setIsProcessing } = useEquipment();
+  const { setEquipmentData, setAiAnalysis, isProcessing, setIsProcessing } = useEquipment();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,31 +28,44 @@ const UploadSection = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const { data, error } = await supabase.functions.invoke('extract-specs', {
+      // Call AI analysis function
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('analyze-equipment', {
         body: formData,
       });
 
-      if (error) throw error;
+      if (aiError) throw aiError;
 
-      if (data.success) {
-        setEquipmentData(data.data);
+      if (aiData.success) {
+        setAiAnalysis(aiData.analysis);
+        
+        // Also extract basic specs for the generator panel
+        const { data: specsData, error: specsError } = await supabase.functions.invoke('extract-specs', {
+          body: formData,
+        });
+
+        if (specsError) {
+          console.error('Specs extraction error:', specsError);
+        } else if (specsData.success) {
+          setEquipmentData(specsData.data);
+        }
+
         setUploadComplete(true);
         toast({
-          title: "✅ Specs Extracted Successfully",
-          description: "Equipment data has been parsed. Review and generate analysis below.",
+          title: "✅ AI Analysis Complete",
+          description: "Equipment has been analyzed successfully.",
         });
-        
-        // Scroll to generator panel
+
+        // Scroll to AI analysis section
         setTimeout(() => {
-          document.getElementById('generator-panel')?.scrollIntoView({ behavior: 'smooth' });
+          document.getElementById('ai-analysis-section')?.scrollIntoView({ behavior: 'smooth' });
         }, 500);
       } else {
-        throw new Error(data.error || 'Failed to extract specs');
+        throw new Error(aiData.error || 'Failed to analyze equipment');
       }
     } catch (error) {
       console.error('Upload error:', error);
       toast({
-        title: "❌ Extraction Failed",
+        title: "❌ Analysis Failed",
         description: error instanceof Error ? error.message : "Failed to process image",
         variant: "destructive",
       });
