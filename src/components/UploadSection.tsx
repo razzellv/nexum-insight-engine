@@ -1,4 +1,4 @@
-import { Upload, Image, CheckCircle2 } from "lucide-react";
+import { Upload, Image, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEquipment } from "@/contexts/EquipmentContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,12 +6,28 @@ import { toast } from "@/hooks/use-toast";
 import { useState, useRef } from "react";
 
 const UploadSection = () => {
-  const { setEquipmentData, setAiAnalysis, isProcessing, setIsProcessing } = useEquipment();
+  const { 
+    currentFacility,
+    setEquipmentData, 
+    setAiAnalysis, 
+    setRegisteredEquipment,
+    isProcessing, 
+    setIsProcessing 
+  } = useEquipment();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
+    if (!currentFacility) {
+      toast({
+        title: "No Facility Selected",
+        description: "Please select or create a facility before uploading equipment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Invalid file type",
@@ -52,7 +68,7 @@ const UploadSection = () => {
         setUploadComplete(true);
         toast({
           title: "✅ AI Analysis Complete",
-          description: "Equipment has been analyzed successfully.",
+          description: "Equipment has been analyzed. Proceed to register it.",
         });
 
         // Scroll to AI analysis section
@@ -86,21 +102,34 @@ const UploadSection = () => {
     if (file) handleFile(file);
   };
 
+  const noFacilitySelected = !currentFacility;
+
   return (
     <section className="py-20 relative">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-3">
-              Upload Engine
+              Equipment Registry
             </h2>
             <p className="text-muted-foreground">
-              Drop your nameplate images and let our AI extract the specs
+              Upload nameplate images to register equipment to your facility
             </p>
           </div>
 
+          {noFacilitySelected && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+              <p className="text-sm text-destructive">
+                Please select or create a facility above before uploading equipment.
+              </p>
+            </div>
+          )}
+
           <div
-            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all bg-card/50 backdrop-blur-sm cursor-pointer ${
+            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all bg-card/50 backdrop-blur-sm ${
+              noFacilitySelected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            } ${
               isDragging
                 ? 'border-primary bg-primary/10'
                 : uploadComplete
@@ -109,11 +138,14 @@ const UploadSection = () => {
             }`}
             onDragOver={(e) => {
               e.preventDefault();
-              setIsDragging(true);
+              if (!noFacilitySelected) setIsDragging(true);
             }}
             onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (!noFacilitySelected) handleDrop(e);
+            }}
+            onClick={() => !noFacilitySelected && fileInputRef.current?.click()}
           >
             <input
               ref={fileInputRef}
@@ -121,7 +153,7 @@ const UploadSection = () => {
               accept="image/*"
               className="hidden"
               onChange={handleFileInput}
-              disabled={isProcessing}
+              disabled={isProcessing || noFacilitySelected}
             />
 
             <div className="flex flex-col items-center gap-4">
@@ -139,29 +171,31 @@ const UploadSection = () => {
               <div>
                 <p className="text-lg font-medium mb-1">
                   {uploadComplete
-                    ? '✅ Specs Extracted Successfully'
+                    ? '✅ Equipment Analyzed'
                     : isDragging
                     ? 'Drop to upload'
-                    : 'Drag & drop your nameplate images'}
+                    : 'Drag & drop nameplate images'}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {uploadComplete
-                    ? 'Upload another image or proceed to generator panel'
+                    ? 'Proceed to register equipment or upload another'
+                    : noFacilitySelected
+                    ? 'Select a facility first'
                     : 'or click to browse (JPEG, PNG supported)'}
                 </p>
               </div>
               <Button
                 className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/50 shadow-lg hover:shadow-primary/50 transition-all"
-                disabled={isProcessing}
+                disabled={isProcessing || noFacilitySelected}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                {isProcessing ? 'Analyzing...' : uploadComplete ? 'Upload Another' : 'Extract Specs & Generate Analysis'}
+                {isProcessing ? 'Analyzing...' : uploadComplete ? 'Upload Another' : 'Upload & Analyze'}
               </Button>
             </div>
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Supports motors, pumps, chillers, boilers, compressors & more
+            Equipment will be auto-assigned to: <span className="font-medium text-foreground">{currentFacility?.name || 'No facility selected'}</span>
           </p>
         </div>
       </div>

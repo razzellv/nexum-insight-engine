@@ -18,3 +18,9 @@ verify_jwt = false
 
 [functions.calculate-performance]
 verify_jwt = false
+
+[functions.register-facility]
+verify_jwt = false
+
+[functions.register-equipment]
+verify_jwt = false
