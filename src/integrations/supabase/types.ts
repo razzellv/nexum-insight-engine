@@ -14,7 +14,158 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      billing_items: {
+        Row: {
+          amount: number
+          created_at: string
+          equipment_id: string | null
+          facility_id: string
+          id: string
+          item_type: Database["public"]["Enums"]["billing_item_type"]
+          tier_applied: Database["public"]["Enums"]["facility_tier"]
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          equipment_id?: string | null
+          facility_id: string
+          id?: string
+          item_type: Database["public"]["Enums"]["billing_item_type"]
+          tier_applied: Database["public"]["Enums"]["facility_tier"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          equipment_id?: string | null
+          facility_id?: string
+          id?: string
+          item_type?: Database["public"]["Enums"]["billing_item_type"]
+          tier_applied?: Database["public"]["Enums"]["facility_tier"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_items_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment: {
+        Row: {
+          benchmark_defaults: Json
+          brand: string | null
+          compliance_ruleset: string
+          condition: string | null
+          created_at: string
+          displacement: number | null
+          efficiency_score: number | null
+          equipment_type: string
+          facility_id: string
+          gpm: number | null
+          hp: number | null
+          id: string
+          image_url: string | null
+          logger_module: Database["public"]["Enums"]["logger_module"]
+          model: string | null
+          rpm: number | null
+          sensor_enabled: boolean
+          updated_at: string
+          voltage: number | null
+        }
+        Insert: {
+          benchmark_defaults?: Json
+          brand?: string | null
+          compliance_ruleset?: string
+          condition?: string | null
+          created_at?: string
+          displacement?: number | null
+          efficiency_score?: number | null
+          equipment_type: string
+          facility_id: string
+          gpm?: number | null
+          hp?: number | null
+          id?: string
+          image_url?: string | null
+          logger_module?: Database["public"]["Enums"]["logger_module"]
+          model?: string | null
+          rpm?: number | null
+          sensor_enabled?: boolean
+          updated_at?: string
+          voltage?: number | null
+        }
+        Update: {
+          benchmark_defaults?: Json
+          brand?: string | null
+          compliance_ruleset?: string
+          condition?: string | null
+          created_at?: string
+          displacement?: number | null
+          efficiency_score?: number | null
+          equipment_type?: string
+          facility_id?: string
+          gpm?: number | null
+          hp?: number | null
+          id?: string
+          image_url?: string | null
+          logger_module?: Database["public"]["Enums"]["logger_module"]
+          model?: string | null
+          rpm?: number | null
+          sensor_enabled?: boolean
+          updated_at?: string
+          voltage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facilities: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          max_equipment_included: number
+          name: string
+          sensor_enabled: boolean
+          tier: Database["public"]["Enums"]["facility_tier"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          max_equipment_included?: number
+          name: string
+          sensor_enabled?: boolean
+          tier?: Database["public"]["Enums"]["facility_tier"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          max_equipment_included?: number
+          name?: string
+          sensor_enabled?: boolean
+          tier?: Database["public"]["Enums"]["facility_tier"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +174,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      billing_item_type: "facility_setup" | "equipment_fee" | "sensor_addon"
+      facility_tier: "starter" | "professional" | "enterprise"
+      logger_module: "boiler" | "chiller" | "energy" | "compressor" | "pump"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +303,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      billing_item_type: ["facility_setup", "equipment_fee", "sensor_addon"],
+      facility_tier: ["starter", "professional", "enterprise"],
+      logger_module: ["boiler", "chiller", "energy", "compressor", "pump"],
+    },
   },
 } as const

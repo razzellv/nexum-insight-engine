@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import { FacilitySelector } from "@/components/FacilitySelector";
 import UploadSection from "@/components/UploadSection";
 import AIAnalysisSection from "@/components/AIAnalysisSection";
 import GeneratorPanel from "@/components/GeneratorPanel";
@@ -12,6 +13,16 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <HeroSection />
+      
+      {/* Facility Registry Section */}
+      <section className="py-10 bg-muted/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <FacilitySelector />
+          </div>
+        </div>
+      </section>
+      
       <UploadSection />
       <div id="ai-analysis-section">
         <AIAnalysisSection />
